@@ -1,0 +1,22 @@
+  import { Controller, Post, Body,Request } from '@nestjs/common';
+  import {ChatService} from './chats.service'
+  import {createChat}  from './dto.chat/createChat.dto'
+  import {addMember}   from './dto.chat/addMemmber.dto'
+
+  
+  @Controller('chat')
+  export class ChatController {
+    constructor(private ChatService: ChatService) {}
+    @Post('CreateChat')
+    createChat(@Body()dto:createChat, @Request() req){
+    return this.ChatService.createChat(req.user.userId,dto.memberIds,dto.isGroup,dto.name,dto.pic);
+    }
+    @Post('addMember')
+    addMember(@Body()dto:addMember, @Request() req){
+        return this.ChatService.addMember(req.user.userId , dto.Chatid)
+    }@Post ('getMychat')
+    getMychat(@Body() @Request() req) {
+        return this.ChatService.getMychat(req.uers.userId)
+    }
+
+  } 

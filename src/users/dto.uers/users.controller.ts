@@ -2,8 +2,8 @@
     import { UsersService } from './users.service.js';
     import { UseGuards } from '@nestjs/common';
     import { AuthGuard } from '@nestjs/passport';
-    import {RegisterDto} from './register.dto.js';
-    import {LogOut} from './logOut.dto.js'
+    import {RegisterDto} from './dto.user/register.dto.js';
+    import {LogOut} from './dto.user/logOut.dto.js'
 
     @Controller('users')
 export class UsersController {
