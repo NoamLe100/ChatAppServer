@@ -2,8 +2,9 @@
   import {ChatService} from './chats.service'
   import {createChat}  from './dto.chat/createChat.dto'
   import {addMember}   from './dto.chat/addMemmber.dto'
+  import { ApiBearerAuth } from '@nestjs/swagger';
 
-  
+  @ApiBearerAuth()
   @Controller('chat')
   export class ChatController {
     constructor(private ChatService: ChatService) {}
@@ -15,7 +16,7 @@
     addMember(@Body()dto:addMember, @Request() req){
         return this.ChatService.addMember(req.user.userId , dto.Chatid)
     }@Post ('getMychat')
-    getMychat(@Body() @Request() req) {
+    getMychat(@Request() req) {
         return this.ChatService.getMychat(req.uers.userId)
     }
 
