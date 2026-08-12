@@ -41,10 +41,4 @@ export class UsersService {
     return {token};
 
 }
-    async singOut(token: string){
-        await this.prisma.revokedToken.create({ 
-            data :{token}
-        })
-        return { message: 'Signed out successfully' }; 
-    }
 }

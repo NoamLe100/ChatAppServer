@@ -18,11 +18,7 @@ export class UsersController {
   singIn(@Body()dto:RegisterDto){
   return this.usersService.singIn(dto.email, dto.password);
   }
-    @ApiBearerAuth()   
-    @Post('singOut')
-    singOut(@Body() dto:LogOut) {
-    return this.usersService.singOut(dto.token);
-  }
+  
   
 }
 
