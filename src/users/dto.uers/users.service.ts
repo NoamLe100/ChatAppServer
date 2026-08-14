@@ -10,7 +10,7 @@ export class UsersService {
     private prisma: PrismaService,
     private jwtService:JwtService,) {}
         
-async register(email: string, password: string) {
+async register(email: string, password: string,userName:string) {
   const existingUser = await this.prisma.user.findUnique({
     where: { email },
   });
@@ -22,7 +22,7 @@ async register(email: string, password: string) {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const newUser = await this.prisma.user.create({
-    data: { email, passwordHash },
+    data: { email, passwordHash, userName},
   });
 
   const token = this.jwtService.sign({ userId: newUser.id });
@@ -43,6 +43,28 @@ async register(email: string, password: string) {
     const token = this.jwtService.sign({userId:existingUser.id});
     return {token};
 
+}
+
+async searchUsers(query: string, currentUserId: number) {
+  if (!query || query.length < 2) {
+    return [];
+  }
+
+  return this.prisma.user.findMany({
+    where: {
+      userName: {
+        contains: query,
+        mode: 'insensitive',
+      },
+      id: { not: currentUserId },
+    },
+    select: {
+      id: true,
+      userName: true,
+      name: true,
+    },
+    take: 10,
+  });
 }
   
 }
