@@ -10,21 +10,24 @@ export class UsersService {
     private prisma: PrismaService,
     private jwtService:JwtService,) {}
         
-  async register(email: string, password: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+async register(email: string, password: string) {
+  const existingUser = await this.prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    return this.prisma.user.create({
-      data: { email, passwordHash },
-    });
+  if (existingUser) {
+    throw new ConflictException('User already exists');
   }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const newUser = await this.prisma.user.create({
+    data: { email, passwordHash },
+  });
+
+  const token = this.jwtService.sign({ userId: newUser.id });
+  return { token };
+}
    async singIn(email: string, password: string)
    {
     const existingUser = await this.prisma.user.findUnique({
@@ -41,4 +44,5 @@ export class UsersService {
     return {token};
 
 }
+  
 }
