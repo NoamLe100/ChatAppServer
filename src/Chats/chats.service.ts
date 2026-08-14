@@ -1,6 +1,6 @@
 import { PrismaService } from "../service.js";
 import { Injectable } from "@nestjs/common";
-import { ConflictException,NotFoundException} from '@nestjs/common';
+import { ConflictException,NotFoundException,ForbiddenException} from '@nestjs/common';
 
 @Injectable()
 export class ChatService {
@@ -19,18 +19,27 @@ export class ChatService {
             }
       })
    }
-   async addMember(userId:number,groupId:number){
-      const inGroup = await this.prisma.chatMember.findFirst({
-       where: { userId: userId, groupId: groupId },
-    } )
-    if(inGroup){
-      throw new ConflictException('all ready in the group');
-    }
-    return this.prisma.chatMember.create(
-      {data:{userId,groupId},
-   })
+ async addMember(actingUserId: number, groupId: number, newMemberId: number) {
+  const actingUserInGroup = await this.prisma.chatMember.findFirst({
+    where: { userId: actingUserId, groupId },
+  });
 
-   }
+  if (!actingUserInGroup) {
+    throw new ForbiddenException('You are not a member of this group');
+  }
+
+  const alreadyMember = await this.prisma.chatMember.findFirst({
+    where: { userId: newMemberId, groupId },
+  });
+
+  if (alreadyMember) {
+    throw new ConflictException('User already in the group');
+  }
+
+  return this.prisma.chatMember.create({
+    data: { userId: newMemberId, groupId },
+  });
+}
 async getMychat(userId: number) {
   return this.prisma.chat.findMany({
     where: {
@@ -50,16 +59,24 @@ async getMychat(userId: number) {
   })
 }
    
-   async getChatByid(chatId:number,userId: number){
-   const chat= await this.prisma.chat.findUnique({
-         where:{id:chatId},
-         include: {members :true}
-      });   
-      if(!chat) {
-          throw new NotFoundException('Chat not found');
+async getChatByid(chatId: number, userId: number) {
+  const chat = await this.prisma.chat.findUnique({
+    where: { id: chatId },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, userName: true }
+          }
+        }
       }
-      return chat;
-   }
+    }
+  });
+  if (!chat) {
+    throw new NotFoundException('Chat not found');
+  }
+  return chat;
+}
    async joinByCode(userId: number, code: string) {
    const chat = await this.prisma.chat.findUnique({ where: { code } });
 
@@ -126,4 +143,6 @@ async startPrivateChat(myUserId: number, otherUserId: number) {
     include: { members: true },
   });
 }   
+
+
 }

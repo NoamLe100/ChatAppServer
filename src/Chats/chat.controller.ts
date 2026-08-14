@@ -1,4 +1,4 @@
-    import { Controller, Post, Body,Request,Get } from '@nestjs/common';
+    import { Controller, Post, Body,Request,Get,Param } from '@nestjs/common';
     import {ChatService} from './chats.service'
     import {createChat}  from './dto.chat/createChat.dto'
     import {addMember}   from './dto.chat/addMemmber.dto'
@@ -13,12 +13,15 @@
       createChat(@Body()dto:createChat, @Request() req){
       return this.ChatService.createChat(req.user.userId,dto.memberIds,dto.isGroup,dto.name,dto.pic);
       }
+
       @Post('addMember')
-      addMember(@Body()dto:addMember, @Request() req){
-          return this.ChatService.addMember(req.user.userId , dto.Chatid)
-      }@Get ('getMychat')
+      addMember(@Body() dto: addMember, @Request() req) {
+      return this.ChatService.addMember(req.user.userId, dto.Chatid, dto.userid);
+      }
+   
+      @Get ('getMychat')
       getMychat(@Request() req) {
-          return this.ChatService.getMychat(req.user.userId)
+      return this.ChatService.getMychat(req.user.userId)
       }
 
       @Post('joinByCode')
@@ -29,4 +32,8 @@
     async startPrivateChat(@Body('userId') otherUserId: number, @Request() req) {
     return this.ChatService.startPrivateChat(req.user.userId, otherUserId);
   }
+  @Get('chat/:id')
+  getChatById(@Param('id') id: string, @Request() req) {
+  return this.ChatService.getChatByid(Number(id), req.user.userId);
+}
 } 
