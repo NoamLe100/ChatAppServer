@@ -4,12 +4,25 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../service';
 import { MassgesService } from '../massges.service';
 
+
+function parseCookie(cookieHeader: string | undefined, name: string): string | null {
+  if (!cookieHeader) return null;
+  const cookies =cookieHeader.split(';').map(c =>c.trim());
+  for (const cookie of cookies){
+    const [key,value]=  cookie.split('=');
+    if(key === name) return value;
+  }
+  return  null;
+}
+
+
 @WebSocketGateway({
-  cors: { origin: '*' }
+  cors: { origin: 'http://localhost:5173', credentials: true }
 })
 export class MessagesGateway implements OnGatewayConnection {
   @WebSocketServer()
   server!: Server;
+
 
   private roomToGroup = new Map<string, number>();
 
@@ -20,7 +33,7 @@ export class MessagesGateway implements OnGatewayConnection {
   ) {}
 
   handleConnection(client: Socket) {
-    const token = client.handshake.auth.token;
+    const token = parseCookie(client.handshake.headers.cookie, 'token');  
     if (!token) {
       console.log('not a vlid token');
       client.disconnect();
