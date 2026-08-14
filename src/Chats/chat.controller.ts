@@ -22,7 +22,11 @@
       }
 
       @Post('joinByCode')
-    joinByCode(@Body() dto: JoinByCodeDto, @Request() req) {
-    return this.ChatService.joinByCode(req.user.userId, dto.code);
+      joinByCode(@Body() dto: JoinByCodeDto, @Request() req) {
+      return this.ChatService.joinByCode(req.user.userId, dto.code);
+    }
+    @Post('startPrivateChat')
+    async startPrivateChat(@Body('userId') otherUserId: number, @Request() req) {
+    return this.ChatService.startPrivateChat(req.user.userId, otherUserId);
   }
 } 

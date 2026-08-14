@@ -31,16 +31,24 @@ export class ChatService {
    })
 
    }
-   async getMychat(userId:number){
-    return this.prisma.chat.findMany({
-      where:{
-         members:{
-            some:{userId}
-         },
+async getMychat(userId: number) {
+  return this.prisma.chat.findMany({
+    where: {
+      members: {
+        some: { userId }
       },
-      include:{members : true}
-    }) 
-   }
+    },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, userName: true }
+          }
+        }
+      }
+    }
+  })
+}
    
    async getChatByid(chatId:number,userId: number){
    const chat= await this.prisma.chat.findUnique({
@@ -93,5 +101,29 @@ export class ChatService {
    
    return code;
 }
-   
+
+async startPrivateChat(myUserId: number, otherUserId: number) {
+  const existing = await this.prisma.chat.findFirst({
+    where: {
+      isGroup: false,
+      AND: [
+        { members: { some: { userId: myUserId } } },
+        { members: { some: { userId: otherUserId } } },
+      ],
+    },
+    include: { members: true },
+  });
+  if (existing) {
+    return existing;
+  }
+  return this.prisma.chat.create({
+    data: {
+      isGroup: false,
+      members: {
+        create: [{ userId: myUserId }, { userId: otherUserId }],
+      },
+    },
+    include: { members: true },
+  });
+}   
 }
