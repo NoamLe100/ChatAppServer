@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, Res, Request, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, Request, Query,Patch } from '@nestjs/common';
 import type { Response } from 'express';
 import { UsersService } from './users.service.js';
 import { RegisterDto } from './dto.user/register.dto.js';
 import { Public } from '../../authentication/public.decorator.js';
+import { UpdateBioeDto } from './dto.user/updateBio.dto.js';
 
 @Controller('users')
 export class UsersController {
@@ -41,15 +42,21 @@ export class UsersController {
     return { message: 'Logged in successfully' };
   }
 
-  @Get('me')
-  getMe(@Request() req) {
-    return { userId: req.user.userId };
-  }
-
+@Get('me')
+async getMe(@Request() req) {
+  const user = await this.usersService.getUserById(req.user.userId);
+  if (!user) return null;
+  return { userId: user.id, name: user.name, userName: user.userName };
+}
   @Public()
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('token');
     return { message: 'Logged out successfully' };
   }
+
+  @Patch('me')
+async updateMe(@Body() dto: UpdateBioeDto, @Request() req) {
+  return this.usersService.updateProfile(req.user.userId, dto.name, dto.userName);
+}
 }

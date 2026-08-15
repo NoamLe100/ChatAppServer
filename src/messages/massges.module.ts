@@ -7,6 +7,6 @@ import { MessagesGateway } from './getway/messages.gateway';
 @Module({
     imports: [],
     controllers: [MassgesController],   
-    providers: [PrismaService,MassgesService, MessagesGateway],
+    providers: [MassgesService, MessagesGateway],
 })
 export class MassegModule {}

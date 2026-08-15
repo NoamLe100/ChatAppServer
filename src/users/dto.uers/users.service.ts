@@ -66,5 +66,30 @@ async searchUsers(query: string, currentUserId: number) {
     take: 10,
   });
 }
+
+async updateProfile(userId: number, name?: string, userName?: string) {
+  if (userName) {
+    const existing = await this.prisma.user.findUnique({ where: { userName } });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Username already taken');
+    }
+  }
+
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(name !== undefined && { name }),
+      ...(userName !== undefined && { userName }),
+    },
+    select: { id: true, name: true, userName: true },
+  });
+}
+
+async getUserById(userId: number) {
+  return this.prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, userName: true },
+  });
+}
   
 }
