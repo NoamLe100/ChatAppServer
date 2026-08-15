@@ -7,12 +7,12 @@ import { MassgesService } from '../massges.service';
 
 function parseCookie(cookieHeader: string | undefined, name: string): string | null {
   if (!cookieHeader) return null;
-  const cookies =cookieHeader.split(';').map(c =>c.trim());
-  for (const cookie of cookies){
-    const [key,value]=  cookie.split('=');
-    if(key === name) return value;
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  for (const cookie of cookies) {
+    const [key, value] = cookie.split('=');
+    if (key === name) return value;
   }
-  return  null;
+  return null;
 }
 
 
@@ -23,9 +23,6 @@ export class MessagesGateway implements OnGatewayConnection {
   @WebSocketServer()
   server!: Server;
 
-
-  private roomToGroup = new Map<string, number>();
-
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
@@ -33,7 +30,7 @@ export class MessagesGateway implements OnGatewayConnection {
   ) {}
 
   handleConnection(client: Socket) {
-    const token = parseCookie(client.handshake.headers.cookie, 'token');  
+    const token = parseCookie(client.handshake.headers.cookie, 'token');
     if (!token) {
       console.log('not a vlid token');
       client.disconnect();
@@ -42,6 +39,7 @@ export class MessagesGateway implements OnGatewayConnection {
     try {
       const payload = this.jwtService.verify(token);
       client.data.userId = payload.userId;
+      client.join(`user_${payload.userId}`);
       console.log('user connected:', payload.userId);
     }
     catch (error) {
@@ -50,30 +48,30 @@ export class MessagesGateway implements OnGatewayConnection {
     }
   }
 
-  @SubscribeMessage('joinRoom')
-  async handlejoinRoom(client: Socket, groupId: string) {
-    const userId = client.data.userId;
+ @SubscribeMessage('joinRoom')
+async handlejoinRoom(client: Socket, groupId: string): Promise<{ success: boolean }> {
+  const userId = client.data.userId;
 
-    const inGroup = await this.prisma.chatMember.findFirst({
-      where: { userId, groupId: Number(groupId) }
-    });
+  const inGroup = await this.prisma.chatMember.findFirst({
+    where: { userId, groupId: Number(groupId) }
+  });
 
-    if (!inGroup) {
-      client.emit('error', 'You are not a member of this group');
-      return;
-    }
-
-    const roomId = `room_${groupId}`;
-    this.roomToGroup.set(roomId, Number(groupId));
-    client.join(roomId);
+  if (!inGroup) {
+    client.emit('error', 'You are not a member of this group');
+    return { success: false };
   }
+
+  const roomId = `room_${groupId}`;
+  client.join(roomId);
+  return { success: true };
+}
 
   @SubscribeMessage('message')
   async handleMessages(client: Socket, payload: { roomId: string, text: string }) {
     const userId = client.data.userId;
-    const groupId = this.roomToGroup.get(payload.roomId);
+    const groupId = Number(payload.roomId.replace('room_', ''));
 
-    if (!groupId) {
+    if (!groupId || Number.isNaN(groupId)) {
       client.emit('error', 'Room not found');
       return;
     }
@@ -81,5 +79,13 @@ export class MessagesGateway implements OnGatewayConnection {
     const savedMessage = await this.massgesService.sandMassge(userId, groupId, payload.text);
 
     this.server.to(payload.roomId).emit('message', savedMessage);
+
+    const members = await this.prisma.chatMember.findMany({
+      where: { groupId },
+      select: { userId: true },
+    });
+    members.forEach(m => {
+      this.server.to(`user_${m.userId}`).emit('chatsUpdated');
+    });
   }
 }

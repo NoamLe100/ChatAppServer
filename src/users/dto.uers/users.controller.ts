@@ -56,7 +56,7 @@ async getMe(@Request() req) {
   }
 
   @Patch('me')
-async updateMe(@Body() dto: UpdateBioeDto, @Request() req) {
+  async updateMe(@Body() dto: UpdateBioeDto, @Request() req) {
   return this.usersService.updateProfile(req.user.userId, dto.name, dto.userName);
 }
 }
